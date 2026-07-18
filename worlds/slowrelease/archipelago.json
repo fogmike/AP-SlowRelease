@@ -1,0 +1,8 @@
+{
+    "version": 7,
+    "compatible_version": 7,
+    "game": null,
+    "minimum_ap_version": "0.6.4",
+    "authors": ["Sandra (TheSandromatic)","fogmike"],
+    "world_version": "0.11.0"
+}
