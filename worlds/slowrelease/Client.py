@@ -1,5 +1,6 @@
 
 from CommonClient import ClientCommandProcessor, CommonContext, logger, server_loop, gui_enabled, get_base_parser
+from NetUtils import ClientStatus
 from worlds.AutoWorld import World
 from BaseClasses import Region
 import asyncio
@@ -16,6 +17,14 @@ class SlowReleaseCommandProcessor(TrackerCommandProcessor):
         """Toggle Region mode (i.e. make the slow release client act more like a player by handling one region of the world at a time.)"""
         self.ctx.region_mode = not self.ctx.region_mode
         logger.info(f"Set region mode to {self.ctx.region_mode}")
+    def _cmd_goal_mode(self):
+        """Toggle Goal mode between Disabled or After All Checks"""
+        if not self.ctx.goal_mode:
+            self.ctx.goal_mode = True
+            logger.info(f"Set goal mode to After All Checks")
+        else:
+            self.ctx.goal_mode = False
+            logger.info(f"Set goal mode to Disabled")
 
 class SlowReleaseContext(TrackerGameContext):
     time_per_min = 10
@@ -24,6 +33,7 @@ class SlowReleaseContext(TrackerGameContext):
     game = ""
     has_game = False
     region_mode = True
+    goal_mode = False
     command_processor = SlowReleaseCommandProcessor
     autoplayer_task = None
     def autoplayer_log(self, message):
@@ -46,6 +56,11 @@ class SlowReleaseContext(TrackerGameContext):
         world: World = self.tracker_core.multiworld.worlds[self.tracker_core.player_id]
         current_region : Region = self.tracker_core.multiworld.get_region(world.origin_region_name, self.tracker_core.player_id)
         while True:
+            if (self.goal_mode == True) and (self.finished_game == False) and (len(self.checked_locations) == self.total_locations):
+                logger.info(f"All checks done, so goaling game. Congrats!")
+                await self.send_msgs([{"cmd": "StatusUpdate", "status": ClientStatus.CLIENT_GOAL}])
+                self.finished_game = True
+                inbk = True
             if len(self.tracker_core.locations_available) > 0:
                 inbk = False
                 goal_location = None
